@@ -1,6 +1,6 @@
 live_root = 'databaserelease2';
 csiq_root = 'CSIQ';
-tid_root = 'TID2013';
+% tid_root = 'TID2013';
 kadid_root = 'kadid10k';
 
 bid_root = 'BID';
@@ -19,10 +19,10 @@ for session = 1:10
     csiq_data=textscan(fid,'%s%s%f%f%f%d');
     fclose(fid);
     
-    filename = fullfile(tid_root,'splits2',num2str(session),'tid_train.txt');
-    fid = fopen(filename);
-    tid_data=textscan(fid,'%s%s%f%f%f%d');
-    fclose(fid);
+    % filename = fullfile(tid_root,'splits2',num2str(session),'tid_train.txt');
+    % fid = fopen(filename);
+    % tid_data=textscan(fid,'%s%s%f%f%f%d');
+    % fclose(fid);
 
     filename = fullfile(kadid_root,'splits2',num2str(session),'kadid10k_train.txt');
     fid = fopen(filename);

@@ -25,7 +25,7 @@ from Transformers import AdaptiveResize
 class Trainer(object):
     def __init__(self, config):
         torch.manual_seed(config.seed)
-        
+
         self.config = config
 
         self.train_transform = transforms.Compose([
@@ -49,7 +49,7 @@ class Trainer(object):
         self.test_batch_size = 1
 
         self.ranking = config.ranking
-        
+
 
         self.train_data = ImageDataset(csv_file=os.path.join(config.trainset, 'splits2', str(config.split), config.train_txt),
                                        img_dir=config.trainset,
@@ -84,16 +84,16 @@ class Trainer(object):
                                       pin_memory=True,
                                       num_workers=1)
 
-        self.tid2013_data = ImageDataset(csv_file=os.path.join(config.tid2013_set, 'splits2', str(config.split), 'tid_test.txt'),
-                                         img_dir=config.tid2013_set,
-                                         transform=self.test_transform,
-                                         test=True)
+        #<self.tid2013_data = ImageDataset(csv_file=os.path.join(config.tid2013_set, 'splits2', str(config.split), 'tid_test.txt'),
+                                         #<img_dir=config.tid2013_set,
+                                         #<transform=self.test_transform,
+                                         #<test=True)
 
-        self.tid2013_loader = DataLoader(self.tid2013_data,
-                                         batch_size=self.test_batch_size,
-                                         shuffle=False,
-                                         pin_memory=True,
-                                         num_workers=1)
+        #<self.tid2013_loader = DataLoader(self.tid2013_data,
+                                         #<batch_size=self.test_batch_size,
+                                         #<shuffle=False,
+                                         #<pin_memory=True,
+                                         #<num_workers=1)
 
         self.kadid10k_data = ImageDataset(csv_file=os.path.join(config.kadid10k_set, 'splits2', str(config.split), 'kadid10k_test.txt'),
                                          img_dir=config.kadid10k_set,
@@ -164,7 +164,7 @@ class Trainer(object):
         else:
             self.loss_fn = nn.MSELoss()
         self.loss_fn.to(self.device)
-        
+
         if self.config.std_modeling:
             self.std_loss_fn = nn.MarginRankingLoss(margin=self.config.margin)
             self.std_loss_fn.to(self.device)
@@ -215,7 +215,7 @@ class Trainer(object):
                                              last_epoch=self.start_epoch-1,
                                              step_size=config.decay_interval,
                                              gamma=config.decay_ratio)
-        
+
 
     def fit(self):
         if self.ranking:
@@ -325,7 +325,7 @@ class Trainer(object):
             test_results_srcc, test_results_plcc = self.eval()
             self.test_results_srcc['live'].append(test_results_srcc['live'])
             self.test_results_srcc['csiq'].append(test_results_srcc['csiq'])
-            self.test_results_srcc['tid2013'].append(test_results_srcc['tid2013'])
+            #<self.test_results_srcc['tid2013'].append(test_results_srcc['tid2013'])
             self.test_results_srcc['kadid10k'].append(test_results_srcc['kadid10k'])
             self.test_results_srcc['bid'].append(test_results_srcc['bid'])
             self.test_results_srcc['clive'].append(test_results_srcc['clive'])
@@ -334,7 +334,7 @@ class Trainer(object):
 
             self.test_results_plcc['live'].append(test_results_plcc['live'])
             self.test_results_plcc['csiq'].append(test_results_plcc['csiq'])
-            self.test_results_plcc['tid2013'].append(test_results_plcc['tid2013'])
+            #<self.test_results_plcc['tid2013'].append(test_results_plcc['tid2013'])
             self.test_results_plcc['kadid10k'].append(test_results_plcc['kadid10k'])
             self.test_results_plcc['bid'].append(test_results_plcc['bid'])
             self.test_results_plcc['clive'].append(test_results_plcc['clive'])
@@ -435,7 +435,7 @@ class Trainer(object):
             test_results_srcc, test_results_plcc = self.eval()
             self.test_results_srcc['live'].append(test_results_srcc['live'])
             self.test_results_srcc['csiq'].append(test_results_srcc['csiq'])
-            self.test_results_srcc['tid2013'].append(test_results_srcc['tid2013'])
+            #<self.test_results_srcc['tid2013'].append(test_results_srcc['tid2013'])
             self.test_results_srcc['kadid10k'].append(test_results_srcc['kadid10k'])
             self.test_results_srcc['bid'].append(test_results_srcc['bid'])
             self.test_results_srcc['clive'].append(test_results_srcc['clive'])
@@ -444,7 +444,7 @@ class Trainer(object):
 
             self.test_results_plcc['live'].append(test_results_plcc['live'])
             self.test_results_plcc['csiq'].append(test_results_plcc['csiq'])
-            self.test_results_plcc['tid2013'].append(test_results_plcc['tid2013'])
+            #<self.test_results_plcc['tid2013'].append(test_results_plcc['tid2013'])
             self.test_results_plcc['kadid10k'].append(test_results_plcc['kadid10k'])
             self.test_results_plcc['bid'].append(test_results_plcc['bid'])
             self.test_results_plcc['clive'].append(test_results_plcc['clive'])
@@ -534,6 +534,7 @@ class Trainer(object):
             srcc['csiq'] = 0
             plcc['csiq'] = 0
 
+        '''
         if self.config.eval_tid2013:
             q_mos = []
             q_hat = []
@@ -555,6 +556,7 @@ class Trainer(object):
         else:
             srcc['tid2013'] = 0
             plcc['tid2013'] = 0
+            '''
 
         if self.config.eval_kadid10k:
             q_mos = []
@@ -702,6 +704,7 @@ class Trainer(object):
         all_std['csiq'] = q_std
         all_pstd['csiq'] = q_pstd
 
+        '''
         q_mos = []
         q_hat = []
         q_std = []
@@ -725,6 +728,7 @@ class Trainer(object):
         all_hat['tid2013'] = q_hat
         all_std['tid2013'] = q_std
         all_pstd['tid2013'] = q_pstd
+        '''
 
         q_mos = []
         q_hat = []

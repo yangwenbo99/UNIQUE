@@ -20,4 +20,4 @@ data_live(num_selectionlive);
 
 data_csiq(num_selectioncsiq);
 
-data_TID2013(num_selectiontid);
+% data_TID2013(num_selectiontid);
