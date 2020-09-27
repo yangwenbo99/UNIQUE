@@ -33,6 +33,7 @@ def parse_config():
                         default=True)  # True for modeling std False for not
     parser.add_argument("--std_loss", type=bool, default=True)
     parser.add_argument("--fixvar", action='store_true') #+
+    parser.add_argument("--force_normalization", action='store_true')
     parser.add_argument("--margin", type=float, default=0.025)
 
     parser.add_argument("--split", type=int, default=1)

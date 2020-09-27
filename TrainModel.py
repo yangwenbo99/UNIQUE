@@ -37,7 +37,7 @@ class Trainer(object):
         self.config = config
 
         #<if config.network != 'lfc':
-        if True:
+        if not config.network.startswith('lfc') or config.force_normalization:
             self.train_transform = transforms.Compose([
                 #transforms.RandomRotation(3),
                 AdaptiveResize(512),
@@ -53,7 +53,7 @@ class Trainer(object):
                 transforms.Normalize(mean=(0.485, 0.456, 0.406),
                                      std=(0.229, 0.224, 0.225))
             ])
-        #<else:
+        else:
             #< Note that the original transform of LFC is different
             self.train_transform = transforms.Compose([
                 transforms.RandomRotation(3),
