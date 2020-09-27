@@ -10,6 +10,7 @@ def parse_config():
     parser.add_argument("--train", type=bool, default=True)
     parser.add_argument('--get_scores', type=bool, default=False)
     parser.add_argument("--use_cuda", type=bool, default=True)
+    # parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--resume", action='store_true')
     parser.add_argument("--seed", type=int, default=19901116)
 
@@ -47,7 +48,7 @@ def parse_config():
 
     parser.add_argument("--eval_live", type=bool, default=True)
     parser.add_argument("--eval_csiq", type=bool, default=True)
-    parser.add_argument("--eval_tid2013", type=bool, default=True)
+    parser.add_argument("--eval_tid2013", type=bool, default=False)
     parser.add_argument("--eval_kadid10k", type=bool, default=True)
     parser.add_argument("--eval_bid", type=bool, default=True)
     parser.add_argument("--eval_clive", type=bool, default=True)
@@ -74,7 +75,23 @@ def parse_config():
 
     parser.add_argument("--verbose", action='store_true')
 
-    return parser.parse_args()
+    config = parser.parse_args()
+    config.to_test = []
+    if config.eval_live:
+        config.to_test.append('live')
+    if config.eval_csiq:
+        config.to_test.append('csiq')
+    if config.eval_tid2013:
+        config.to_test.append('tid2013')
+    if config.eval_kadid10k:
+        config.to_test.append('kadid10k')
+    if config.eval_bid:
+        config.to_test.append('bid')
+    if config.eval_clive:
+        config.to_test.append('clive')
+    if config.eval_koniq10k:
+        config.to_test.append('koniq10k')
+    return config
 
 
 def main(cfg):
@@ -95,25 +112,7 @@ def main(cfg):
         scores_path = os.path.join('./scores/', ('scores' + str(cfg.split) + '.mat'))
         sio.savemat(scores_path, {'mos': all_mos, 'hat': all_hat, 'std': all_std, 'pstd': all_pstd})
     else:
-        test_results_srcc, test_results_plcc = t.eval()
-        out_str = 'Testing: LIVE SRCC: {:.4f}  CSIQ SRCC: {:.4f}  KADID10K SRCC: {:.4f}' \
-                  ' BID SRCC: {:.4f} CLIVE SRCC: {:.4f}  KONIQ10K SRCC: {:.4f}'.format(test_results_srcc['live'],
-                                                                                              test_results_srcc['csiq'],
-                                                                                              # test_results_srcc['tid2013'],
-                                                                                              test_results_srcc['kadid10k'],
-                                                                                              test_results_srcc['bid'],
-                                                                                              test_results_srcc['clive'],
-                                                                                              test_results_srcc['koniq10k'])
-        out_str2 = 'Testing: LIVE PLCC: {:.4f}  CSIQ PLCC: {:.4f} KADID10K PLCC: {:.4f}' \
-                   ' BID PLCC: {:.4f} CLIVE PLCC: {:.4f}  KONIQ10K PLCC: {:.4f}'.format(test_results_plcc['live'],
-                                                                                               test_results_plcc['csiq'],
-                                                                                               # test_results_plcc['tid2013'],
-                                                                                               test_results_plcc['kadid10k'],
-                                                                                               test_results_plcc['bid'],
-                                                                                               test_results_plcc['clive'],
-                                                                                               test_results_plcc['koniq10k'])
-        print(out_str)
-        print(out_str2)
+        t.eval_and_record(save_to_state_dict=False)
 
 
 if __name__ == "__main__":
