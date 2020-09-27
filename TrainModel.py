@@ -162,14 +162,13 @@ class Trainer(object):
         self.device = torch.device("cuda" if torch.cuda.is_available() and config.use_cuda else "cpu")
 
         # initialize the model
-        #self.model = E2EUIQA()
         if config.network == 'basecnn':
             self.model = BaseCNN(config)
             self.model = nn.DataParallel(self.model, device_ids=[0])
         elif config.network == 'dbcnn':
             self.model = DBCNN(config)
             self.model = nn.DataParallel(self.model).cuda()
-        elif config.network == 'lfc':
+        elif config.network.startswith('lfc'):
             self.model = E2EUIQA(config)
             # self.model = nn.DataParallel(self.model).cuda()
         else:
