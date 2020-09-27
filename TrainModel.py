@@ -175,7 +175,8 @@ class Trainer(object):
             raise NotImplementedError("Not supported network, need to be added!")
         self.model.to(self.device)
         self.model_name = type(self.model).__name__
-        print(self.model)
+        if self.config.verbose:
+            print(self.model)
 
         # loss function
         if config.ranking:
@@ -878,7 +879,8 @@ class Trainer(object):
 
     def _load_checkpoint(self, ckpt):
         if os.path.isfile(ckpt):
-            print("[*] loading checkpoint '{}'".format(ckpt))
+            if self.config.verbose:
+                print("[*] loading checkpoint '{}'".format(ckpt))
             checkpoint = torch.load(ckpt)
             self.start_epoch = checkpoint['epoch']+1
             self.train_loss = checkpoint['train_loss']
@@ -890,8 +892,9 @@ class Trainer(object):
             if self.initial_lr is not None:
                 for param_group in self.optimizer.param_groups:
                     param_group['initial_lr'] = self.initial_lr
-            print("[*] loaded checkpoint '{}' (epoch {})"
-                  .format(ckpt, checkpoint['epoch']))
+            if self.config.verbose:
+                print("[*] loaded checkpoint '{}' (epoch {})"
+                      .format(ckpt, checkpoint['epoch']))
         else:
             print("[!] no checkpoint found at '{}'".format(ckpt))
 
