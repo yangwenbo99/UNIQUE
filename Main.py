@@ -72,6 +72,8 @@ def parse_config():
     parser.add_argument("--epochs_per_eval", type=int, default=1)
     parser.add_argument("--epochs_per_save", type=int, default=1)
 
+    parser.add_argument("--verbose", action='store_true')
+
     return parser.parse_args()
 
 
