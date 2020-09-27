@@ -102,10 +102,10 @@ def main(cfg):
                                                                                               test_results_srcc['bid'],
                                                                                               test_results_srcc['clive'],
                                                                                               test_results_srcc['koniq10k'])
-        out_str2 = 'Testing: LIVE PLCC: {:.4f}  CSIQ PLCC: {:.4f} TID2013 PLCC: {:.4f} KADID10K PLCC: {:.4f}' \
+        out_str2 = 'Testing: LIVE PLCC: {:.4f}  CSIQ PLCC: {:.4f} KADID10K PLCC: {:.4f}' \
                    ' BID PLCC: {:.4f} CLIVE PLCC: {:.4f}  KONIQ10K PLCC: {:.4f}'.format(test_results_plcc['live'],
                                                                                                test_results_plcc['csiq'],
-                                                                                               test_results_plcc['tid2013'],
+                                                                                               # test_results_plcc['tid2013'],
                                                                                                test_results_plcc['kadid10k'],
                                                                                                test_results_plcc['bid'],
                                                                                                test_results_plcc['clive'],
