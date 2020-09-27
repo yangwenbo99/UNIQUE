@@ -1,0 +1,26 @@
+Pure LFC (1):
+python Main.py --train '' --network lfc --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 --ckpt E2EUIQA-00004.pt
+
+	TRANSFORM WITHOUT NORMALISATION
+
+	Testing: LIVE SRCC: 0.9437  CSIQ SRCC: 0.8588  KADID10K SRCC: 0.7579 BID SRCC: 0.8063 CLIVE SRCC: 0.6597  KONIQ10K SRCC: 0.7836
+	Testing: LIVE PLCC: 0.9287  CSIQ PLCC: 0.8935 KADID10K PLCC: 0.7500 BID PLCC: 0.8030 CLIVE PLCC: 0.7025  KONIQ10K PLCC: 0.7878
+
+python Main.py --train '' --network lfc --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 --ckpt_path checkpoint_1/ --ckpt E2EUIQA-00006.pt
+
+UNIQUE with basecnn (0)
+python Main.py --train '' --network basecnn --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --max_epochs2 12  --batch_size=16 --batch_size2=16 --ckpt DataParallel-00011.pt
+python Main.py --train True --network basecnn --representation BCNN --ranking True --fidelity True --std_modeling True --std_loss True --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --max_epochs2 12 --resume --ckpt DataParallel-00011.pt              
+
+	NOTE THAT THE TRANSFORM IS DIFFERENT!
+	Testing: LIVE SRCC 0.9735  CSIQ SRCC 0.8260  KADID10K SRCC 0.8958  BID SRCC 0.8705  CLIVE SRCC 0.8621  KONIQ10K SRCC 0.8864
+	Testing: LIVE PLCC 0.9695  CSIQ PLCC 0.8746  KADID10K PLCC 0.8921  BID PLCC 0.8743  CLIVE PLCC 0.8973  KONIQ10K PLCC 0.8929
+
+LFC without Gdn (replace by ReLU) (2)
+
+python Main.py --train '' --network lfc_relu --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 --ckpt E2EUIQA-00007.pt
+
+	TRANSFORM WITHOUT NORMALISATION
+
+	Testing: LIVE SRCC 0.9142  CSIQ SRCC 0.7614  KADID10K SRCC 0.7854  BID SRCC 0.7499  CLIVE SRCC 0.6037  KONIQ10K SRCC 0.7639
+	Testing: LIVE PLCC 0.8932  CSIQ PLCC 0.8263  KADID10K PLCC 0.7808  BID PLCC 0.7202  CLIVE PLCC 0.6723  KONIQ10K PLCC 0.7743

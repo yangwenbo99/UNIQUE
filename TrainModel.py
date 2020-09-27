@@ -36,7 +36,7 @@ class Trainer(object):
 
         self.config = config
 
-        if not config.network.startswith('lfc'):
+        if not config.network.startswith('lfc') or config.force_normalization:
             self.train_transform = transforms.Compose([
                 #transforms.RandomRotation(3),
                 AdaptiveResize(512),
@@ -78,7 +78,13 @@ class Trainer(object):
         self.train_loader = self._build_automated_dataset(
                 'train',
                 get_filelist_name(config.trainset, config.train_txt),
-                config.trainset)
+                config.trainset,
+                test=(not config.ranking),
+                batch_size=self.train_batch_size,
+                transform=self.train_transform,
+                shuffle=True,
+                num_workers=12
+                )
 
         self.test_loaders = [
                 self._build_automated_dataset(
@@ -197,18 +203,29 @@ class Trainer(object):
     def _gen_automated_dataset(self):
         pass
 
-    def _build_automated_dataset(self, name, file_list, img_dir):
+    def _build_automated_dataset(
+            self, name, file_list, img_dir,
+            test=True,
+            transform=None,
+            batch_size=None,
+            num_workers=1,
+            shuffle=False):
+        if transform is None:
+            transform = self.test_transform
+        if batch_size is None:
+            batch_size = self.test_batch_size
+
         data = ImageDataset(
                 csv_file=file_list,
                 img_dir=img_dir,
-                transform=self.test_transform,
-                test=True)
+                transform=transform,
+                test=test)
 
         loader = DataLoader(data,
-                batch_size=self.test_batch_size,
-                shuffle=False,
+                batch_size=batch_size,
+                shuffle=shuffle,
                 pin_memory=True,
-                num_workers=1)
+                num_workers=num_workers)
 
         automated_dataset = AutomatedDataset(name, loader)
         return automated_dataset
