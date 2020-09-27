@@ -1,0 +1,9 @@
+checkpoint 1: 
+	python Main.py --train True --network basecnn --representation BCNN --ranking True --fidelity True --std_modeling True --std_loss True --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --max_epochs2 12 --resume 1
+
+	python Main.py --train True --network lfc --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16
+
+
+	python Main.py --train True --network lfc --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16
+
+

@@ -14,10 +14,15 @@ from ImageDataset import ImageDataset
 from BaseCNN import BaseCNN
 from DBCNN import DBCNN
 from MNL_Loss import Fidelity_Loss
+from lfc_cnn import E2EUIQA
 
 #from E2euiqa import E2EUIQA
 #from MNL_Loss import L2_Loss, Binary_Loss
 #from Gdn import Gdn2d, Gdn1d
+
+#! Rows to delete
+#< Rows to notice
+#+ Rows with important comments for adversarial training
 
 from Transformers import AdaptiveResize
 
@@ -28,22 +33,37 @@ class Trainer(object):
 
         self.config = config
 
-        self.train_transform = transforms.Compose([
-            #transforms.RandomRotation(3),
-            AdaptiveResize(512),
-            transforms.RandomCrop(config.image_size),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                 std=(0.229, 0.224, 0.225))
-        ])
+        #<if config.network != 'lfc':
+        if True:
+            self.train_transform = transforms.Compose([
+                #transforms.RandomRotation(3),
+                AdaptiveResize(512),
+                transforms.RandomCrop(config.image_size),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                     std=(0.229, 0.224, 0.225))
+            ])
+            self.test_transform = transforms.Compose([
+                AdaptiveResize(768),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                     std=(0.229, 0.224, 0.225))
+            ])
+        #<else:
+            #< Note that the original transform of LFC is different
+            self.train_transform = transforms.Compose([
+                transforms.RandomRotation(3),
+                transforms.RandomCrop(config.image_size),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor()
+            ])
+            self.test_transform = transforms.Compose([
+                AdaptiveResize(768),
+                transforms.ToTensor()
+            ])
 
-        self.test_transform = transforms.Compose([
-            AdaptiveResize(768),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                 std=(0.229, 0.224, 0.225))
-        ])
+
 
         self.train_batch_size = config.batch_size
         self.test_batch_size = 1
@@ -149,6 +169,9 @@ class Trainer(object):
         elif config.network == 'dbcnn':
             self.model = DBCNN(config)
             self.model = nn.DataParallel(self.model).cuda()
+        elif config.network == 'lfc':
+            self.model = E2EUIQA(config)
+            # self.model = nn.DataParallel(self.model).cuda()
         else:
             raise NotImplementedError("Not supported network, need to be added!")
         self.model.to(self.device)
@@ -272,11 +295,21 @@ class Trainer(object):
                 if self.config.split_modeling:
                     p = torch.sigmoid(y_diff)
                 else:
+                    #+ y_var = y1_var * y1_var + y2_var * y2_var + 1e-8
+                    #+ Paul modified here, for adversarial training
                     y_var = y1_var * y1_var + y2_var * y2_var + 1e-8
+                    #+ eps = 2 for checkpoint 1
                     p = 0.5 * (1 + torch.erf(y_diff / torch.sqrt(2 * y_var.detach())))
+                    #!print('p.shape', p.shape)
+                    if p.isnan().any():
+                        print('!!! NaN in p')
 
                 std_label = torch.sign((gstd1 - gstd2))
-                self.std_loss = self.std_loss_fn(y1_var, y2_var, std_label.detach())
+                if self.config.fixvar:
+                    self.std_loss = 0
+                else:
+                    self.std_loss = self.std_loss_fn(y1_var, y2_var, std_label.detach())
+                #!print('vars:', y1_var, y2_var)#!
             else:
                 y1 = self.model(x1)
                 y2 = self.model(x2)
@@ -288,29 +321,38 @@ class Trainer(object):
             else:
                 self.loss = self.loss_fn(p, yb.detach())
             if self.config.std_loss:
+                #!print(self.loss, self.std_loss)  #!
                 self.loss += self.std_loss
+                #! self.loss = self.std_loss #!
+
+            if self.loss.isnan().any():
+                print('!!! NaN in loss')
             self.loss.backward()
             self.optimizer.step()
+            if self.config.network == 'lfc':
+                self.model.gdn_param_proc()
+            #!input()
 
             # statistics
-            running_loss = beta * running_loss + (1 - beta) * self.loss.data.item()
-            loss_corrected = running_loss / (1 - beta ** local_counter)
+            with torch.no_grad(): #+
+                running_loss = beta * running_loss + (1 - beta) * self.loss.data.item()
+                loss_corrected = running_loss / (1 - beta ** local_counter)
 
-            if self.config.std_loss:
-                running_std_loss = beta * running_std_loss + (1 - beta) * self.std_loss.data.item()
-                std_loss_corrected = running_std_loss / (1 - beta ** local_counter)
-            else:
-                std_loss_corrected = 0
+                if self.config.std_loss and not self.config.fixvar:
+                    running_std_loss = beta * running_std_loss + (1 - beta) * self.std_loss.data.item()
+                    std_loss_corrected = running_std_loss / (1 - beta ** local_counter)
+                else:
+                    std_loss_corrected = 0
 
-            current_time = time.time()
-            duration = current_time - start_time
-            running_duration = beta * running_duration + (1 - beta) * duration
-            duration_corrected = running_duration / (1 - beta ** local_counter)
-            examples_per_sec = self.train_batch_size / duration_corrected
-            format_str = ('(E:%d, S:%d / %d) [Loss = %.4f] [Std Loss = %.4f] (%.1f samples/sec; %.3f '
-                          'sec/batch)')
-            print(format_str % (epoch, step, num_steps_per_epoch, loss_corrected, std_loss_corrected,
-                                examples_per_sec, duration_corrected))
+                current_time = time.time()
+                duration = current_time - start_time
+                running_duration = beta * running_duration + (1 - beta) * duration
+                duration_corrected = running_duration / (1 - beta ** local_counter)
+                examples_per_sec = self.train_batch_size / duration_corrected
+                format_str = ('(E:%d, S:%d / %d) [Loss = %.4f] [Std Loss = %.4f] (%.1f samples/sec; %.3f '
+                              'sec/batch)')
+                print(format_str % (epoch, step, num_steps_per_epoch, loss_corrected, std_loss_corrected,
+                                    examples_per_sec, duration_corrected))
 
             local_counter += 1
             self.start_step = 0
@@ -341,20 +383,24 @@ class Trainer(object):
             self.test_results_plcc['koniq10k'].append(test_results_plcc['koniq10k'])
 
 
-            out_str = 'Testing: LIVE SRCC: {:.4f}  CSIQ SRCC: {:.4f} TID2013 SRCC: {:.4f} KADID10K SRCC: {:.4f} ' \
+            out_str = 'Testing: LIVE SRCC: {:.4f}  CSIQ SRCC: {:.4f} ' + \
+                    'KADID10K SRCC: {:.4f} ' + \
                       'BID SRCC: {:.4f} CLIVE SRCC: {:.4f}  KONIQ10K SRCC: {:.4f}'.format(
+                    # 'TID2013 SRCC: {:.4f} '+ \
                 test_results_srcc['live'],
                 test_results_srcc['csiq'],
-                test_results_srcc['tid2013'],
+                # test_results_srcc['tid2013'],
                 test_results_srcc['kadid10k'],
                 test_results_srcc['bid'],
                 test_results_srcc['clive'],
                 test_results_srcc['koniq10k'])
-            out_str2 = 'Testing: LIVE PLCC: {:.4f}  CSIQ PLCC: {:.4f} TID2013 PLCC: {:.4f} KADID10K PLCC: {:.4f} ' \
+            out_str2 = 'Testing: LIVE PLCC: {:.4f}  CSIQ PLCC: {:.4f} ' + \
+                    'KADID10K PLCC: {:.4f} ' + \
                        'BID PLCC: {:.4f} CLIVE PLCC: {:.4f}  KONIQ10K PLCC: {:.4f}'.format(
+                    #'TID2013 PLCC: {:.4f} '+ \
                 test_results_plcc['live'],
                 test_results_plcc['csiq'],
-                test_results_plcc['tid2013'],
+                # test_results_plcc['tid2013'],
                 test_results_plcc['kadid10k'],
                 test_results_plcc['bid'],
                 test_results_plcc['clive'],
@@ -377,6 +423,7 @@ class Trainer(object):
             }, model_name)
 
         return self.loss.data.item()
+
 
     def _train_single_epoch_regression(self, epoch):
         # initialize logging system
@@ -408,6 +455,8 @@ class Trainer(object):
             self.loss = self.loss_fn(y, g.float().detach())
             self.loss.backward()
             self.optimizer.step()
+            if self.config.network == 'lfc':
+                self.model.gdn_param_proc()
 
             # statistics
             running_loss = beta * running_loss + (1 - beta) * self.loss.data.item()

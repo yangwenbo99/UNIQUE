@@ -48,6 +48,7 @@ class BaseCNN(nn.Module):
         x = self.backbone.layer3(x)
         x = self.backbone.layer4(x)
 
+        #!print('The shape of x:', x.shape)
         if self.config.representation == 'BCNN':
             x = self.representation(x)
         else:
@@ -58,6 +59,10 @@ class BaseCNN(nn.Module):
         if self.config.std_modeling:
             mean = x[:, 0]
             t = x[:, 1]
+            #!print('The shape of x:', x.shape)
+            #< 128, 2
+            #!print('Shape of mean:', mean.shape)    #<
+            #!input()
             var = nn.functional.softplus(t)
             return mean, var
         else:

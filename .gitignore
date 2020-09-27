@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 IQA_database/
+checkpoint*

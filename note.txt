@@ -1,0 +1,12 @@
+The loss is calculated as following: 
+
+            self.std_loss_fn = nn.MarginRankingLoss(margin=self.config.margin)
+			self.loss_fn = Fidelity_Loss() (when the cmdop set)
+	
+				p = 0.5 * (1 + torch.erf(y_diff / torch.sqrt(2 * y_var.detach())))
+                std_label = torch.sign((gstd1 - gstd2))
+				with stdmodeling
+					self.std_loss = self.std_loss_fn(y1_var, y2_var, std_label.detach())
+					self.loss = self.loss_fn(p, yb.detach()) + self.std_loss
+
+				without stdmodeling
