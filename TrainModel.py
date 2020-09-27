@@ -896,8 +896,7 @@ class Trainer(object):
                 print("[*] loaded checkpoint '{}' (epoch {})"
                       .format(ckpt, checkpoint['epoch']))
         else:
-            if self.config.verbose:
-                print("[!] no checkpoint found at '{}'".format(ckpt))
+            print("[!] no checkpoint found at '{}'".format(ckpt))
 
     @staticmethod
     def _get_latest_checkpoint(path):
