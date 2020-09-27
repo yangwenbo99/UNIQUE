@@ -128,7 +128,8 @@ if __name__ == "__main__":
     config = parse_config()
     if config.get_scores:
         epochs = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6]
-        for i in range(0, 10):
+        # for i in range(0, 10): #<
+        for i in range(0, 1):
             config = parse_config()
             split = i + 1
             config.split = split
@@ -142,11 +143,13 @@ if __name__ == "__main__":
                 config.ckpt = 'DataParallel-000' + str(epochs[i]) + '.pt'
             main(config)
     else:
-        for i in range(0, 10):
+        # for i in range(0, 10): #<
+        for i in range(0, 1):
             config = parse_config()
             split = i + 1
             config.split = split
             config.ckpt_path = os.path.join(config.ckpt_path, str(config.split))
+            #< Seems wrong here?
             if not os.path.exists(config.ckpt_path):
                 os.makedirs(config.ckpt_path)
 
