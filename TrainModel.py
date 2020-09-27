@@ -10,11 +10,14 @@ from torchvision import transforms
 import torch.nn as nn
 
 from ImageDataset import ImageDataset
+from dataset import AutomatedDataset
 
 from BaseCNN import BaseCNN
 from DBCNN import DBCNN
 from MNL_Loss import Fidelity_Loss
 from lfc_cnn import E2EUIQA
+
+from typing import Dict
 
 #from E2euiqa import E2EUIQA
 #from MNL_Loss import L2_Loss, Binary_Loss
@@ -70,94 +73,45 @@ class Trainer(object):
 
         self.ranking = config.ranking
 
+        def get_filelist_name(dset, txt):
+            return os.path.join(dset, 'splits2', str(config.split), txt)
 
-        self.train_data = ImageDataset(csv_file=os.path.join(config.trainset, 'splits2', str(config.split), config.train_txt),
-                                       img_dir=config.trainset,
-                                       transform=self.train_transform,
-                                       test=(not config.ranking))
-        self.train_loader = DataLoader(self.train_data,
-                                       batch_size=self.train_batch_size,
-                                       shuffle=True,
-                                       pin_memory=True,
-                                       num_workers=12)
+        self.train_loader = self._build_automated_dataset(
+                'train',
+                get_filelist_name(config.trainset, config.train_txt),
+                config.trainset)
 
-        # testing set configuration
-        self.live_data = ImageDataset(csv_file=os.path.join(config.live_set, 'splits2', str(config.split), 'live_test.txt'),
-                                      img_dir=config.live_set,
-                                      transform=self.test_transform,
-                                      test=True)
-
-        self.live_loader = DataLoader(self.live_data,
-                                      batch_size=self.test_batch_size,
-                                      shuffle=False,
-                                      pin_memory=True,
-                                      num_workers=1)
-
-        self.csiq_data = ImageDataset(csv_file=os.path.join(config.csiq_set, 'splits2', str(config.split), 'csiq_test.txt'),
-                                      img_dir=config.csiq_set,
-                                      transform=self.test_transform,
-                                      test=True)
-
-        self.csiq_loader = DataLoader(self.csiq_data,
-                                      batch_size=self.test_batch_size,
-                                      shuffle=False,
-                                      pin_memory=True,
-                                      num_workers=1)
-
-        #<self.tid2013_data = ImageDataset(csv_file=os.path.join(config.tid2013_set, 'splits2', str(config.split), 'tid_test.txt'),
-                                         #<img_dir=config.tid2013_set,
-                                         #<transform=self.test_transform,
-                                         #<test=True)
-
-        #<self.tid2013_loader = DataLoader(self.tid2013_data,
-                                         #<batch_size=self.test_batch_size,
-                                         #<shuffle=False,
-                                         #<pin_memory=True,
-                                         #<num_workers=1)
-
-        self.kadid10k_data = ImageDataset(csv_file=os.path.join(config.kadid10k_set, 'splits2', str(config.split), 'kadid10k_test.txt'),
-                                         img_dir=config.kadid10k_set,
-                                         transform=self.test_transform,
-                                         test=True)
-
-        self.kadid10k_loader = DataLoader(self.kadid10k_data,
-                                         batch_size=self.test_batch_size,
-                                         shuffle=False,
-                                         pin_memory=True,
-                                         num_workers=1)
-
-        self.bid_data = ImageDataset(csv_file=os.path.join(config.bid_set, 'splits2', str(config.split), 'bid_test.txt'),
-                                     img_dir=config.bid_set,
-                                     transform=self.test_transform,
-                                     test=True)
-
-        self.bid_loader = DataLoader(self.bid_data,
-                                     batch_size=self.test_batch_size,
-                                     shuffle=False,
-                                     pin_memory=True,
-                                     num_workers=1)
-
-        self.clive_data = ImageDataset(csv_file=os.path.join(config.clive_set, 'splits2', str(config.split), 'clive_test.txt'),
-                                       img_dir=config.clive_set,
-                                       transform=self.test_transform,
-                                       test=True)
-
-        self.clive_loader = DataLoader(self.clive_data,
-                                       batch_size=self.test_batch_size,
-                                       shuffle=False,
-                                       pin_memory=True,
-                                       num_workers=1)
-
-        self.koniq10k_data = ImageDataset(csv_file=os.path.join(config.koniq10k_set, 'splits2', str(config.split), 'koniq10k_test.txt'),
-                                       img_dir=config.koniq10k_set,
-                                       transform=self.test_transform,
-                                       test=True)
-
-        self.koniq10k_loader = DataLoader(self.koniq10k_data,
-                                       batch_size=self.test_batch_size,
-                                       shuffle=False,
-                                       pin_memory=True,
-                                       num_workers=1)
+        self.test_loaders = [
+                self._build_automated_dataset(
+                    'live',
+                    get_filelist_name(config.live_set, 'live_test.txt'),
+                    config.live_set),
+                self._build_automated_dataset(
+                    'csiq',
+                    get_filelist_name(config.csiq_set, 'csiq_test.txt'),
+                    config.csiq_set),
+                #<self._build_automated_dataset(
+                #<    'tid2013',
+                #<    get_filelist_name(config.tid2013_set, 'tid_test.txt'),
+                #<    config.tid2013_set),
+                self._build_automated_dataset(
+                    'kadid10k',
+                    get_filelist_name(config.kadid10k_set, 'kadid10k_test.txt'),
+                    config.kadid10k_set),
+                self._build_automated_dataset(
+                    'bid',
+                    get_filelist_name(config.bid_set, 'bid_test.txt'),
+                    config.bid_set),
+                self._build_automated_dataset(
+                    'clive',
+                    get_filelist_name(config.clive_set, 'clive_test.txt'),
+                    config.clive_set),
+                self._build_automated_dataset(
+                    'koniq10k',
+                    get_filelist_name(config.koniq10k_set, 'koniq10k_test.txt'),
+                    config.koniq10k_set),
+                ]
+        #! Copy-and-paste based programming eliminated!
 
         self.device = torch.device("cuda" if torch.cuda.is_available() and config.use_cuda else "cpu")
 
@@ -219,8 +173,10 @@ class Trainer(object):
         self.start_step = 0
         self.train_loss = []
         self.train_std_loss = []
-        self.test_results_srcc = {'live': [], 'csiq': [], 'tid2013': [], 'kadid10k': [], 'bid': [], 'clive': [], 'koniq10k': []}
-        self.test_results_plcc = {'live': [], 'csiq': [], 'tid2013': [], 'kadid10k': [], 'bid': [], 'clive': [], 'koniq10k': []}
+        self.test_results_srcc = {
+                dsname: [] for dsname in config.to_test}
+        self.test_results_plcc = {
+                dsname: [] for dsname in config.to_test}
         self.ckpt_path = config.ckpt_path
         self.max_epochs = config.max_epochs
         self.epochs_per_eval = config.epochs_per_eval
@@ -238,6 +194,25 @@ class Trainer(object):
                                              last_epoch=self.start_epoch-1,
                                              step_size=config.decay_interval,
                                              gamma=config.decay_ratio)
+
+    def _gen_automated_dataset(self):
+        pass
+
+    def _build_automated_dataset(self, name, file_list, img_dir):
+        data = ImageDataset(
+                csv_file=file_list,
+                img_dir=img_dir,
+                transform=self.test_transform,
+                test=True)
+
+        loader = DataLoader(data,
+                batch_size=self.test_batch_size,
+                shuffle=False,
+                pin_memory=True,
+                num_workers=1)
+
+        automated_dataset = AutomatedDataset(name, loader)
+        return automated_dataset
 
 
     def fit(self):
@@ -363,51 +338,7 @@ class Trainer(object):
 
         #if (epoch+1) % self.epochs_per_eval == 0:
         if (not self.config.fc) & ((epoch+1) % self.epochs_per_eval == 0):
-            # evaluate after every other epoch
-            test_results_srcc, test_results_plcc = self.eval()
-            self.test_results_srcc['live'].append(test_results_srcc['live'])
-            self.test_results_srcc['csiq'].append(test_results_srcc['csiq'])
-            #<self.test_results_srcc['tid2013'].append(test_results_srcc['tid2013'])
-            self.test_results_srcc['kadid10k'].append(test_results_srcc['kadid10k'])
-            self.test_results_srcc['bid'].append(test_results_srcc['bid'])
-            self.test_results_srcc['clive'].append(test_results_srcc['clive'])
-            self.test_results_srcc['koniq10k'].append(test_results_srcc['koniq10k'])
-
-
-            self.test_results_plcc['live'].append(test_results_plcc['live'])
-            self.test_results_plcc['csiq'].append(test_results_plcc['csiq'])
-            #<self.test_results_plcc['tid2013'].append(test_results_plcc['tid2013'])
-            self.test_results_plcc['kadid10k'].append(test_results_plcc['kadid10k'])
-            self.test_results_plcc['bid'].append(test_results_plcc['bid'])
-            self.test_results_plcc['clive'].append(test_results_plcc['clive'])
-            self.test_results_plcc['koniq10k'].append(test_results_plcc['koniq10k'])
-
-
-            out_str = 'Testing: LIVE SRCC: {:.4f}  CSIQ SRCC: {:.4f} ' + \
-                    'KADID10K SRCC: {:.4f} ' + \
-                      'BID SRCC: {:.4f} CLIVE SRCC: {:.4f}  KONIQ10K SRCC: {:.4f}'.format(
-                    # 'TID2013 SRCC: {:.4f} '+ \
-                test_results_srcc['live'],
-                test_results_srcc['csiq'],
-                # test_results_srcc['tid2013'],
-                test_results_srcc['kadid10k'],
-                test_results_srcc['bid'],
-                test_results_srcc['clive'],
-                test_results_srcc['koniq10k'])
-            out_str2 = 'Testing: LIVE PLCC: {:.4f}  CSIQ PLCC: {:.4f} ' + \
-                    'KADID10K PLCC: {:.4f} ' + \
-                       'BID PLCC: {:.4f} CLIVE PLCC: {:.4f}  KONIQ10K PLCC: {:.4f}'.format(
-                    #'TID2013 PLCC: {:.4f} '+ \
-                test_results_plcc['live'],
-                test_results_plcc['csiq'],
-                # test_results_plcc['tid2013'],
-                test_results_plcc['kadid10k'],
-                test_results_plcc['bid'],
-                test_results_plcc['clive'],
-                test_results_plcc['koniq10k'])
-
-            print(out_str)
-            print(out_str2)
+            self.eval_and_record()
 
         if (epoch+1) % self.epochs_per_save == 0:
             model_name = '{}-{:0>5d}.pt'.format(self.model_name, epoch)
@@ -481,44 +412,7 @@ class Trainer(object):
         #if (epoch+1) % self.epochs_per_eval == 0:
         if (not self.config.fc) & ((epoch+1) % self.epochs_per_eval == 0):
             # evaluate after every other epoch
-            test_results_srcc, test_results_plcc = self.eval()
-            self.test_results_srcc['live'].append(test_results_srcc['live'])
-            self.test_results_srcc['csiq'].append(test_results_srcc['csiq'])
-            #<self.test_results_srcc['tid2013'].append(test_results_srcc['tid2013'])
-            self.test_results_srcc['kadid10k'].append(test_results_srcc['kadid10k'])
-            self.test_results_srcc['bid'].append(test_results_srcc['bid'])
-            self.test_results_srcc['clive'].append(test_results_srcc['clive'])
-            self.test_results_srcc['koniq10k'].append(test_results_srcc['koniq10k'])
-
-
-            self.test_results_plcc['live'].append(test_results_plcc['live'])
-            self.test_results_plcc['csiq'].append(test_results_plcc['csiq'])
-            #<self.test_results_plcc['tid2013'].append(test_results_plcc['tid2013'])
-            self.test_results_plcc['kadid10k'].append(test_results_plcc['kadid10k'])
-            self.test_results_plcc['bid'].append(test_results_plcc['bid'])
-            self.test_results_plcc['clive'].append(test_results_plcc['clive'])
-            self.test_results_plcc['koniq10k'].append(test_results_plcc['koniq10k'])
-
-            out_str = 'Testing: LIVE SRCC: {:.4f}  CSIQ SRCC: {:.4f} TID2013 SRCC: {:.4f} KADID10K SRCC: {:.4f} ' \
-                      'BID SRCC: {:.4f} CLIVE SRCC: {:.4f}  KONIQ10K SRCC: {:.4f}'.format(
-                test_results_srcc['live'],
-                test_results_srcc['csiq'],
-                test_results_srcc['tid2013'],
-                test_results_srcc['kadid10k'],
-                test_results_srcc['bid'],
-                test_results_srcc['clive'],
-                test_results_srcc['koniq10k'])
-            out_str2 = 'Testing: LIVE PLCC: {:.4f}  CSIQ PLCC: {:.4f} TID2013 PLCC: {:.4f} KADID10K PLCC: {:.4f} ' \
-                       'BID PLCC: {:.4f} CLIVE PLCC: {:.4f}  KONIQ10K PLCC: {:.4f}'.format(
-                test_results_plcc['live'],
-                test_results_plcc['csiq'],
-                test_results_plcc['tid2013'],
-                test_results_plcc['kadid10k'],
-                test_results_plcc['bid'],
-                test_results_plcc['clive'],
-                test_results_plcc['koniq10k'])
-            print(out_str)
-            print(out_str2)
+            self.eval_and_record()
 
         if (epoch+1) % self.epochs_per_save == 0:
             model_name = '{}-{:0>5d}.pt'.format(self.model_name, epoch)
@@ -536,168 +430,44 @@ class Trainer(object):
         return self.loss.data.item()
 
     def eval(self):
-        srcc = {}
-        plcc = {}
+        """
+        return: two dict named srccs and plccs, whose keys are dtatasets tested
+        """
+        srccs = {}
+        plccs = {}
         self.model.eval()
-        if self.config.eval_live:
-            q_mos = []
-            q_hat = []
-            for step, sample_batched in enumerate(self.live_loader, 0):
-                x, y = sample_batched['I'], sample_batched['mos']
-                x = Variable(x)
-                x = x.to(self.device)
 
-                if self.config.std_modeling:
-                    y_bar, _ = self.model(x)
-                else:
-                    y_bar = self.model(x)
-                y_bar.cpu()
-                q_mos.append(y.data.numpy())
-                q_hat.append(y_bar.cpu().data.numpy())
-
-            srcc['live'] = scipy.stats.mstats.spearmanr(x=q_mos, y=q_hat)[0]
-            plcc['live'] = scipy.stats.mstats.pearsonr(x=q_mos, y=q_hat)[0]
+        if self.config.std_modeling:
+            model = lambda x : self.model(x)[0]
         else:
-            srcc['live'] = 0
-            plcc['live'] = 0
+            model = self.model
 
-        if self.config.eval_csiq:
-            q_mos = []
-            q_hat = []
-            for step, sample_batched in enumerate(self.csiq_loader, 0):
-                x, y = sample_batched['I'], sample_batched['mos']
-                x = Variable(x)
-                x = x.to(self.device)
+        for dset in self.test_loaders:
+            if dset._name in self.config.to_test:
+                srcc, plcc = dset.eval(self.device, model)
+                srccs[dset._name] = srcc
+                plccs[dset._name] = plcc
 
-                if self.config.std_modeling:
-                    y_bar, _ = self.model(x)
-                else:
-                    y_bar = self.model(x)
-                y_bar.cpu()
-                q_mos.append(y.data.numpy())
-                q_hat.append(y_bar.cpu().data.numpy())
+        return srccs, plccs
 
-            srcc['csiq'] = scipy.stats.mstats.spearmanr(x=q_mos, y=q_hat)[0]
-            plcc['csiq'] = scipy.stats.mstats.pearsonr(x=q_mos, y=q_hat)[0]
-        else:
-            srcc['csiq'] = 0
-            plcc['csiq'] = 0
+    def eval_and_record(self, save_to_state_dict=True):
+        def get_out_str(scores: Dict[str, float], score_name: str):
+            l = ['{} {} {:.4f}'.format(name.upper(), score_name, score)
+                    for name, score in scores.items()]
+            return '  '.join(l)
 
-        '''
-        if self.config.eval_tid2013:
-            q_mos = []
-            q_hat = []
-            for step, sample_batched in enumerate(self.tid2013_loader, 0):
-                x, y = sample_batched['I'], sample_batched['mos']
-                x = Variable(x)
-                x = x.to(self.device)
+        test_results_srcc, test_results_plcc = self.eval()
+        if save_to_state_dict:
+            for dset_name in self.config.to_test:
+                self.test_results_srcc[dset_name].append(test_results_srcc[dset_name])
+                self.test_results_plcc[dset_name].append(test_results_plcc[dset_name])
 
-                if self.config.std_modeling:
-                    y_bar, _ = self.model(x)
-                else:
-                    y_bar = self.model(x)
-                y_bar.cpu()
-                q_mos.append(y.data.numpy())
-                q_hat.append(y_bar.cpu().data.numpy())
-
-            srcc['tid2013'] = scipy.stats.mstats.spearmanr(x=q_mos, y=q_hat)[0]
-            plcc['tid2013'] = scipy.stats.mstats.pearsonr(x=q_mos, y=q_hat)[0]
-        else:
-            srcc['tid2013'] = 0
-            plcc['tid2013'] = 0
-            '''
-
-        if self.config.eval_kadid10k:
-            q_mos = []
-            q_hat = []
-            for step, sample_batched in enumerate(self.kadid10k_loader, 0):
-                x, y = sample_batched['I'], sample_batched['mos']
-                x = Variable(x)
-                x = x.to(self.device)
-
-                if self.config.std_modeling:
-                    y_bar, _ = self.model(x)
-                else:
-                    y_bar = self.model(x)
-                y_bar.cpu()
-                q_mos.append(y.data.numpy())
-                q_hat.append(y_bar.cpu().data.numpy())
-
-            srcc['kadid10k'] = scipy.stats.mstats.spearmanr(x=q_mos, y=q_hat)[0]
-            plcc['kadid10k'] = scipy.stats.mstats.pearsonr(x=q_mos, y=q_hat)[0]
-        else:
-            srcc['kadid10k'] = 0
-            plcc['kadid10k'] = 0
-
-        if self.config.eval_bid:
-            q_mos = []
-            q_hat = []
-            for step, sample_batched in enumerate(self.bid_loader, 0):
-                x, y = sample_batched['I'], sample_batched['mos']
-                x = Variable(x)
-                x = x.to(self.device)
-
-                if self.config.std_modeling:
-                    y_bar, _ = self.model(x)
-                else:
-                    y_bar = self.model(x)
-                y_bar.cpu()
-                q_mos.append(y.data.numpy())
-                q_hat.append(y_bar.cpu().data.numpy())
-
-            srcc['bid'] = scipy.stats.mstats.spearmanr(x=q_mos, y=q_hat)[0]
-            plcc['bid'] = scipy.stats.mstats.pearsonr(x=q_mos, y=q_hat)[0]
-        else:
-            srcc['bid'] = 0
-            plcc['bid'] = 0
-
-        if self.config.eval_clive:
-            q_mos = []
-            q_hat = []
-            for step, sample_batched in enumerate(self.clive_loader, 0):
-                x, y = sample_batched['I'], sample_batched['mos']
-                x = Variable(x)
-                x = x.to(self.device)
-
-                if self.config.std_modeling:
-                    y_bar, _ = self.model(x)
-                else:
-                    y_bar = self.model(x)
-                y_bar.cpu()
-                q_mos.append(y.data.numpy())
-                q_hat.append(y_bar.cpu().data.numpy())
-
-            srcc['clive'] = scipy.stats.mstats.spearmanr(x=q_mos, y=q_hat)[0]
-            plcc['clive'] = scipy.stats.mstats.pearsonr(x=q_mos, y=q_hat)[0]
-        else:
-            srcc['clive'] = 0
-            plcc['clive'] = 0
+        out_str = 'Testing: ' + get_out_str(test_results_srcc, 'SRCC')
+        out_str2 = 'Testing: ' + get_out_str(test_results_plcc, 'PLCC')
+        print(out_str)
+        print(out_str2)
 
 
-        if self.config.eval_koniq10k:
-            q_mos = []
-            q_hat = []
-            for step, sample_batched in enumerate(self.koniq10k_loader, 0):
-                x, y = sample_batched['I'], sample_batched['mos']
-                x = Variable(x)
-                x = x.to(self.device)
-
-                if self.config.std_modeling:
-                    y_bar, _ = self.model(x)
-                else:
-                    y_bar = self.model(x)
-                y_bar.cpu()
-                q_mos.append(y.data.numpy())
-                q_hat.append(y_bar.cpu().data.numpy())
-
-            srcc['koniq10k'] = scipy.stats.mstats.spearmanr(x=q_mos, y=q_hat)[0]
-            plcc['koniq10k'] = scipy.stats.mstats.pearsonr(x=q_mos, y=q_hat)[0]
-        else:
-            srcc['koniq10k'] = 0
-            plcc['koniq10k'] = 0
-
-
-        return srcc, plcc
 
     def get_scores(self):
         all_mos = {}
