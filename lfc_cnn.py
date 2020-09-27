@@ -56,12 +56,26 @@ def build_model(normc=Gdn2d, normf=Gdn1d, layer=3, width=48, outdim=2):
 class E2EUIQA(nn.Module):
     # end-to-end unsupervised image quality assessment model
     def __init__(self, config):
+        def dummy_relu(*argv):
+            return nn.ReLU()
+
+        def crelu(width):
+            return nn.Conv2d(width, width, kernel_size=1, stride=1, padding=0, bias=True)
+
+
         super(E2EUIQA, self).__init__()
         if config.std_modeling and not config.fixvar:
             outdim = 2
         else:
             outdim = 1
-        self.cnn = build_model(outdim=outdim)
+
+        if config.network == 'lfc':
+            norm = Gdn2d
+        elif config.network == 'lfc_relu':
+            norm = dummy_relu
+        elif config.network == 'lfc_crelu':
+            norm = crelu
+        self.cnn = build_model(normc=norm, outdim=outdim)
         self.config = config
 
     def forward(self, x):

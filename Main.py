@@ -80,9 +80,9 @@ def main(cfg):
 
     #+
     # checking compatability
-    if cfg.fixvar and cfg.network != 'lfc':
+    if cfg.fixvar and not cfg.network.startswith('lfc'):
         raise NotImplementedError()
-    if cfg.backbone == 'lfc' and not cfg.std_modeling:
+    if str(cfg.backbone).startswith('lfc') and not cfg.std_modeling:
         raise NotImplementedError()
 
 
