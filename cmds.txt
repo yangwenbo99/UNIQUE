@@ -36,18 +36,22 @@ Force normalisation
 WITHOUT SYSTHESIS
 Lipschitz, normalisation and from existing checkpoint
 
-(7a, SEVEN-A) (cslab)
+(8a, EIGHT-A) (cslab)
 
 	python Main.py --train True --network lfc --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 
 
-(7b, SEVEN-B) (cslab)
+(8b, EIGHT-B) (cslab)
 
 	python Main.py --train True --network lfc --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 --lipschitz
 
-(8a, EIGHT-A)
+(9a, NINE-A)
 
 	python Main.py --train True --network lfc_relu --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 --force_normalization
 
-(8b, EIGHT-B)
+
+(9b, NINE-B)
 
 	python Main.py --train True --network lfc_relu --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 --force_normalization --lipschitz
+
+	Based on trained network (from 00005): 
+	python Main.py --train True --network lfc_relu --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 --force_normalization --lipschitz --resume
