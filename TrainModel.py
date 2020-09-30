@@ -388,6 +388,8 @@ class Trainer(object):
             self.start_step = 0
             start_time = time.time()
 
+        self.network_parameter_correct(-1, self.model)
+
         self.train_loss.append(loss_corrected)
         self.train_std_loss.append(std_loss_corrected)
 

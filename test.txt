@@ -24,3 +24,11 @@ python Main.py --train '' --network lfc_relu --ranking True --fidelity True --st
 
 	Testing: LIVE SRCC 0.9142  CSIQ SRCC 0.7614  KADID10K SRCC 0.7854  BID SRCC 0.7499  CLIVE SRCC 0.6037  KONIQ10K SRCC 0.7639
 	Testing: LIVE PLCC 0.8932  CSIQ PLCC 0.8263  KADID10K PLCC 0.7808  BID PLCC 0.7202  CLIVE PLCC 0.6723  KONIQ10K PLCC 0.7743
+
+LFC_ReLU with normalisation
+
+	python Main.py --train '' --network lfc_relu --ranking True --fidelity True --std_modeling True --std_loss '' --margin 0.025 --batch_size 128 --batch_size2 32 --image_size 384 --max_epochs 3 --lr 1e-4 --decay_interval 3 --decay_ratio 0.1 --fixvar --max_epochs2 12  --batch_size=16 --batch_size2=16 --force_normalization
+
+	Testing: LIVE SRCC 0.9417  CSIQ SRCC 0.7547  KADID10K SRCC 0.7560  BID SRCC 0.7841  CLIVE SRCC 0.6932  KONIQ10K SRCC 0.7904
+	Testing: LIVE PLCC 0.9303  CSIQ PLCC 0.8079  KADID10K PLCC 0.7534  BID PLCC 0.7843  CLIVE PLCC 0.7429  KONIQ10K PLCC 0.7961
+
