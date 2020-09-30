@@ -16,8 +16,7 @@ from BaseCNN import BaseCNN
 from DBCNN import DBCNN
 from MNL_Loss import Fidelity_Loss
 from lfc_cnn import E2EUIQA
-import functor
-
+from utils import functor
 from typing import Dict
 
 #from E2euiqa import E2EUIQA

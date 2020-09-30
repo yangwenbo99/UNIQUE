@@ -17,8 +17,8 @@ class ThenFunctor(Functor):
         self._b = b
 
     def __call__(self, *args):
-        self._a(args)
-        return self._b(args)
+        self._a(*args)
+        return self._b(*args)
 
 class FunctorWrap(Functor):
     def __init__(self, func):
@@ -33,7 +33,7 @@ class SumFunctor(Functor):
         self._b = b
 
     def __call__(self, *args):
-        return self._a(args) + self._b(args)
+        return self._a(*args) + self._b(*args)
 
 class DifferenceFunction(Functor):
     def __init__(self, a: Functor, b: Functor):
@@ -41,4 +41,4 @@ class DifferenceFunction(Functor):
         self._b = b
 
     def __call__(self, *args):
-        return self._a(args) - self._b(args)
+        return self._a(*args) - self._b(*args)
