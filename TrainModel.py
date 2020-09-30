@@ -16,6 +16,7 @@ from BaseCNN import BaseCNN
 from DBCNN import DBCNN
 from MNL_Loss import Fidelity_Loss
 from lfc_cnn import E2EUIQA
+import functor
 
 from typing import Dict
 
@@ -28,6 +29,8 @@ from typing import Dict
 #+ Rows with important comments for adversarial training
 
 from Transformers import AdaptiveResize
+
+from lipschitz import NetworkLipschitzEnforcer
 
 
 class Trainer(object):
@@ -141,8 +144,10 @@ class Trainer(object):
         if config.ranking:
             if config.fidelity:
                 self.loss_fn = Fidelity_Loss()
+                # self.loss_fn_state = FunctorWrap(lambda state: self.loss_fn(state.p, state.g.detach()))
             else:
                 self.loss_fn = nn.BCEWithLogitsLoss()
+                # self.loss_fn_state = FunctorWrap(lambda state: FunctorWrap(lambda state: self.loss_fn(state.p, state.g.detach())))
         else:
             self.loss_fn = nn.MSELoss()
         self.loss_fn.to(self.device)
@@ -150,6 +155,21 @@ class Trainer(object):
         if self.config.std_modeling:
             self.std_loss_fn = nn.MarginRankingLoss(margin=self.config.margin)
             self.std_loss_fn.to(self.device)
+
+        if self.config.network == 'lfc':
+            self.network_parameter_correct = functor.FunctorWrap(
+                    lambda i, model: model.gdn_param_proc())
+            # i is the iteration number and model is the model
+        else:
+            self.network_parameter_correct = functor.Functor()
+        if self.config.lipschitz:
+            self.lipschitz_enforcer = NetworkLipschitzEnforcer.default_enforcer(self.model)
+            def enforce_lip(i, model):
+                if i < 0 or i % 20 == 0:
+                    self.lipschitz_enforcer.correct()
+            self.network_parameter_correct = \
+                    self.network_parameter_correct.then(enforce_lip)
+
 
         self.initial_lr = config.lr
         if self.initial_lr is None:
@@ -241,6 +261,34 @@ class Trainer(object):
                     _ = self._train_single_epoch_regression(epoch)
                     self.scheduler.step()
 
+    class TrainSingleEpochState:
+        """
+        x1, x2, g, gstd1, gstd2, yb
+        y1_var, y2_var
+        p
+        """
+        def __init__(self, x1, x2, g, gstd1, gstd2, yb):
+            self.x1 = x1
+            self.x2 = x2
+            self.g  = g
+            self.gstd1 = gstd1
+            self.gstd2 = gstd2
+            self.yb = yb
+
+
+    class TrainSingleEpoch:
+        """
+        For std_modeling:
+            one need to determine p:
+                by whether split modeling
+            Then, determine std_loss
+        Otherwise, p shall be determined by y1 - y2
+
+        The loss is consist of two component , the first part is by fidelyty,
+        and the second part is by std_loss
+        """
+        pass
+
     def _train_single_epoch(self, epoch):
         # initialize logging system
         num_steps_per_epoch = len(self.train_loader)
@@ -263,54 +311,48 @@ class Trainer(object):
                 continue
 
             x1, x2, g, gstd1, gstd2, yb = sample_batched['I1'], sample_batched['I2'], sample_batched['y'], sample_batched['std1'], sample_batched['std2'], sample_batched['yb']
-            x1 = Variable(x1)
-            x2 = Variable(x2)
-            g = Variable(g).view(-1, 1)
-            yb = Variable(yb).view(-1, 1)
-            x1 = x1.to(self.device)
-            x2 = x2.to(self.device)
-            g = g.to(self.device)
-            yb = yb.to(self.device)
-
-            gstd1 = gstd1.to(self.device)
-            gstd2 = gstd2.to(self.device)
-            #g = torch.cat((g[:, :6], g[:, 7:9], g[:, 10].unsqueeze(-1)), dim=-1)
-
+            state = self.TrainSingleEpochState(
+                    x1=x1.to(self.device),
+                    x2=x2.to(self.device),
+                    g = g.view(-1, 1).to(self.device),
+                    yb = yb.view(-1, 1).to(self.device),
+                    gstd1 = gstd1.to(self.device),
+                    gstd2 = gstd2.to(self.device))
 
             self.optimizer.zero_grad()
             if self.config.std_modeling:
-                y1, y1_var = self.model(x1)
-                y2, y2_var = self.model(x2)
-                y_diff = y1 - y2
+                state.y1, state.y1_var = self.model(state.x1)
+                state.y2, state.y2_var = self.model(state.x2)
+                state.y_diff = state.y1 - state.y2
 
                 if self.config.split_modeling:
-                    p = torch.sigmoid(y_diff)
+                    state.p = torch.sigmoid(state.y_diff)
                 else:
                     #+ y_var = y1_var * y1_var + y2_var * y2_var + 1e-8
                     #+ Paul modified here, for adversarial training
-                    y_var = y1_var * y1_var + y2_var * y2_var + 1e-8
+                    state.y_var = state.y1_var * state.y1_var + state.y2_var * state.y2_var + 1e-8
                     #+ eps = 2 for checkpoint 1
-                    p = 0.5 * (1 + torch.erf(y_diff / torch.sqrt(2 * y_var.detach())))
+                    state.p = 0.5 * (1 + torch.erf(state.y_diff / torch.sqrt(2 * state.y_var.detach())))
                     #!print('p.shape', p.shape)
-                    if p.isnan().any():
+                    if state.p.isnan().any():
                         print('!!! NaN in p')
 
-                std_label = torch.sign((gstd1 - gstd2))
+                state.std_label = torch.sign((gstd1 - gstd2))
                 if self.config.fixvar:
                     self.std_loss = 0
                 else:
-                    self.std_loss = self.std_loss_fn(y1_var, y2_var, std_label.detach())
+                    self.std_loss = self.std_loss_fn(state.y1_var, state.y2_var, state.std_label.detach())
                 #!print('vars:', y1_var, y2_var)#!
             else:
-                y1 = self.model(x1)
-                y2 = self.model(x2)
-                y_diff = y1 - y2
-                p = y_diff
+                state.y1 = self.model(state.x1)
+                state.y2 = self.model(state.x2)
+                state.y_diff = state.y1 - state.y2
+                state.p = state.y_diff
 
             if self.config.fidelity:
-                self.loss = self.loss_fn(p, g.detach())
+                self.loss = self.loss_fn(state.p, state.g.detach())
             else:
-                self.loss = self.loss_fn(p, yb.detach())
+                self.loss = self.loss_fn(state.p, state.yb.detach())
             if self.config.std_loss:
                 #!print(self.loss, self.std_loss)  #!
                 self.loss += self.std_loss
@@ -320,9 +362,7 @@ class Trainer(object):
                 print('!!! NaN in loss')
             self.loss.backward()
             self.optimizer.step()
-            if self.config.network == 'lfc':
-                self.model.gdn_param_proc()
-            #!input()
+            self.network_parameter_correct(step, self.model)
 
             # statistics
             with torch.no_grad(): #+
