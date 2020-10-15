@@ -524,6 +524,13 @@ class Trainer(object):
         print(out_str)
         print(out_str2)
 
+    def predict_single_image(self, x):
+        if self.config.std_modeling:
+            model = lambda x : self.model(x)[0]
+        else:
+            model = self.model
+
+        return model(x)
 
 
     def get_scores(self):
